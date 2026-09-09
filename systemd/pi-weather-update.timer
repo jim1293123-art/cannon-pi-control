@@ -1,0 +1,11 @@
+[Unit]
+Description=Check GitHub for weather UI changes every minute
+
+[Timer]
+OnStartupSec=15s
+OnUnitActiveSec=60s
+AccuracySec=1s
+Unit=pi-weather-update.service
+
+[Install]
+WantedBy=timers.target

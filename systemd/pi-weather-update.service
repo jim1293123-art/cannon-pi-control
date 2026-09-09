@@ -1,0 +1,9 @@
+[Unit]
+Description=Download and validate the latest Pi weather UI
+
+[Service]
+Type=oneshot
+ExecStart=%h/pi-weather/update.sh
+TimeoutStartSec=55
+NoNewPrivileges=yes
+UMask=0022

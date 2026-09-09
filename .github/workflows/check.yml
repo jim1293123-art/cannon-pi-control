@@ -1,0 +1,23 @@
+name: Check weather controller
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check shell scripts
+        run: |
+          for script in *.sh; do bash -n "$script"; done
+          shellcheck *.sh
+      - name: Validate HTML, server and atomic updater
+        run: python3 -m unittest discover -s tests -v
+      - name: Test the 1280x720 touchscreen UI
+        run: |
+          npm install --no-save --package-lock=false playwright
+          npx playwright install --with-deps chromium
+          node tests/browser.cjs

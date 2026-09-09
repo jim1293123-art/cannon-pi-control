@@ -1,0 +1,12 @@
+[Unit]
+Description=Local Pi weather web server
+
+[Service]
+ExecStart=/usr/bin/python3 %h/pi-weather/server.py
+WorkingDirectory=%h/pi-weather
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=default.target
