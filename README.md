@@ -1,159 +1,188 @@
-# Cannon Pi Weather
+# Cannon Pi Weather v2
 
-Fullscreen touchscreen weather for **Raspberry Pi 5**, the official **Touch
-Display 2**, and user **cannon**. `weather.html` is the complete UI, designed for
-**1280×720 landscape**, with all forecast sections visible without scrolling.
+The existing `jim1293123-art/cannon-pi-control` project, upgraded from
+`Cannon-Weather-v2-Radar-Settings.zip`. Designed for Raspberry Pi 5, user `cannon`,
+Touch Display 2, and **1280×720 landscape** on Raspberry Pi OS Desktop with
+**Wayland / labwc**.
 
-## Install
+## One-time v2 upgrade
 
-Use Raspberry Pi OS **Desktop 64-bit with labwc / Wayland** (current Trixie or
-updated Bookworm). Connect the Touch Display 2 and internet, log in as `cannon`,
-and paste this command into a terminal **without sudo**:
+The old updater downloads only HTML. **Run this once as `cannon`, without sudo
+in front of the command**, to install the new backend, exit action and complete
+release updater:
 
 ```bash
 bash -c 'set -e; file=$(mktemp); trap '\''rm -f "$file"'\'' EXIT; curl -fsSL --proto "=https" --proto-redir "=https" https://raw.githubusercontent.com/jim1293123-art/cannon-pi-control/main/install.sh -o "$file"; bash "$file"'
 ```
 
-Then run `sudo reboot`. Sudo is used only to install OS packages and configure
-desktop autologin and disabled screen blanking. App files, Chromium, the server,
-and the updater belong to `cannon`. No API key or GitHub credential is installed.
-Raspberry Pi OS Lite and X11 sessions are not supported by this setup.
+Then run `sudo reboot` once. This ends any old browser process and verifies the
+single startup path. The installer also works for a fresh Pi OS Desktop install.
+On an existing setup it preserves OS autologin and blanking configuration; on a
+fresh install it enables desktop autologin and disables screen blanking. Sudo is
+used only for missing OS packages and initial OS configuration.
 
-The installer creates `~/pi-weather`, installs systemd user units under
-`~/.config/systemd/user`, and adds one entry to `~/.config/labwc/autostart`,
-preserving existing entries. The desktop passes its Wayland environment to
-systemd before launching the kiosk. A dedicated Chromium profile saves the city,
-units, and last successful forecast. Reinstalling preserves those preferences.
+**Your existing `~/pi-weather/rotation` value of `270` is preserved.** The launcher
+continues reading that file, never writes to it, and defaults to 270 only when
+it is missing. Releases cannot contain `rotation`. Chromium keeps
+`--password-store=basic` and the existing `~/pi-weather/chromium-profile`.
 
-The launcher detects the DSI output and rotates the native 720×1280 panel 90
-degrees at scale 1, producing 1280×720. For the opposite landscape direction:
+V2 HTML carries a new app marker: the original v1 validator intentionally leaves
+v1 running until this upgrade installs all required files together.
 
-```bash
-echo 270 > ~/pi-weather/rotation
-systemctl --user restart pi-weather-kiosk.service
-```
+## App
 
-Use a dedicated, single-display kiosk. Check touch alignment after first boot;
-Raspberry Pi OS Wayland handles touch with the rotated output. If needed, check
-output and touch mapping in the desktop's Control Centre / Screens settings.
-The launcher reapplies the selected rotation whenever it starts.
+- **Home:** temperature, condition, feels-like, high/low, humidity, current-hour
+  rain chance, wind speed/direction, today's peak UV, sunrise/sunset, next 12 hours,
+  and seven days including today. Active US weather alerts open readable details.
+- **Live Radar:** the ZIP's interactive Windy radar map, centered on the selected
+  city, with pan/zoom, refresh and recenter controls. The map loads when opened
+  and refreshes every five minutes while visible. Internet and regional radar
+  coverage are required; use the provider's timeline to inspect observation times.
+- **Details:** temperature and rain-chance graphs, daylight progress, extra daily
+  readings, and US AQI / PM2.5 / PM10 when available.
+- **Settings:** city/postal-code search, built-in touch keyboard, six saved
+  locations, Fahrenheit/mph or Celsius/km/h, 12/24-hour time, weather refresh
+  interval, manual refresh, and **Exit Weather App to Desktop**.
 
-## Features
+Settings save immediately. Existing v1 city/unit preferences are migrated where
+available. Times follow the selected city's timezone. Weather defaults to a
+10-minute refresh; failures retry after 60 seconds, including a failed first
+request. Cached forecasts remain visible with offline/stale labels. Missing
+values are shown as `--`, never a fabricated zero.
 
-- Current temperature, weather condition, feels-like, and today's high/low.
-- Humidity, this hour's rain chance, wind speed/direction, today's peak UV,
-  sunrise and sunset.
-- Next 12 hourly forecasts and a seven-day forecast including today.
-- Tap the city name to search worldwide by city or postal code. The built-in
-  touch keyboard requires no OS keyboard. Phoenix is the initial city.
-- Tap the unit button for Fahrenheit/mph or Celsius/km/h. Times follow the
-  selected city's timezone, including daylight saving time.
-- Weather refreshes every ten minutes; failures retry every minute. Cached data
-  remains visible with offline/stale labeling. Missing values appear as `--`.
+Weather: [Open-Meteo](https://open-meteo.com/en/docs); search:
+[Open-Meteo geocoding](https://open-meteo.com/en/docs/geocoding-api); air quality:
+[CAMS / Open-Meteo](https://open-meteo.com/en/docs/air-quality-api); US alerts:
+[NWS](https://www.weather.gov/documentation/services-web-alerts); radar:
+[Windy](https://embed.windy.com/). No API key is needed. Coverage and provider
+availability vary; unavailable alerts are distinguished from no active alerts.
+Open-Meteo's free service is for non-commercial use and has usage limits.
 
-Data uses [Open-Meteo](https://open-meteo.com/en/docs) and its
-[geocoding API](https://open-meteo.com/en/docs/geocoding-api), with no API key.
-The free API is intended for non-commercial use and has usage limits.
+## Exit and startup
 
-## Automatic updates
+Chromium is launched **only by `pi-weather-kiosk.service`**. One Labwc
+`desktop-start.sh` bridge imports the actual Wayland session environment and asks
+systemd to start that service; it does not launch Chromium itself. The installer
+removes known legacy `start-weather.sh`, direct weather Chromium and duplicate
+bridge lines from the user's Labwc autostart. It disables matching XDG desktop
+entries. Original files are backed up beside them as `*.before-weather-v2`.
+Unrelated desktop startup entries are retained. The updater never edits autostart.
 
-`pi-weather-update.timer` runs `pi-weather-update.service` about every 60 seconds
-while `cannon`'s user session is running. Desktop autologin starts that session
-after reboot; no root timer or user lingering is needed.
-
-`~/pi-weather/update.sh` downloads only
-[`main/weather.html`](https://raw.githubusercontent.com/jim1293123-art/cannon-pi-control/main/weather.html)
-over HTTPS into a temporary file beside the live file. Validation checks download
-success, size, UTF-8, the app marker, required elements and document completion.
-Empty, truncated, error or structurally invalid responses leave the live file
-untouched. Identical content is not replaced. Changed valid content is installed
-with an atomic rename, with a lock preventing overlapping installs.
-
-Validation is a structural guard, not a security audit or a JavaScript test;
-`main` is the trusted source of application code. The updater never executes
-downloaded shell scripts, uses no sudo, and has `NoNewPrivileges=yes`.
-
-The loopback server at `http://127.0.0.1:8765/weather.html` exposes only the UI and
-its revision hash. The browser checks the revision every 15 seconds and reloads
-on change, retaining preferences. GitHub caching or an outage can delay delivery
-beyond one minute. Only `weather.html` updates automatically; rerun the installer
-to upgrade supporting scripts and units.
-
-## Stop and start
-
-Run as `cannon`, in a terminal or SSH login as that user.
-
-Stop the display now (it returns at next desktop login):
+The local Python server binds **127.0.0.1:8765** and serves only the weather UI,
+`/revision`, `/health`, and `POST /exit`. The Exit button sends a request with a
+page token. The backend validates the local Host, Origin and token, then runs:
 
 ```bash
-systemctl --user stop pi-weather-kiosk.service
+systemctl --user --no-block stop pi-weather-kiosk.service
 ```
 
-Start again after the desktop has loaded:
+Stopping the service closes only that service's Chromium process group and
+suppresses automatic restart. Other Chromium windows/profiles, the weather
+server and updater remain running. A backend update does not stop the browser;
+a launcher update uses `try-restart`, so it does not reopen a kiosk you exited.
+At the next desktop login or reboot, the kiosk starts normally.
+
+Start it again after Exit, from a desktop terminal or SSH as `cannon`:
 
 ```bash
 systemctl --user start pi-weather-kiosk.service
 ```
 
-If the environment has not yet been imported, run
-`~/pi-weather/desktop-start.sh` **from a desktop terminal**. SSH alone cannot
-provide a missing graphical session.
+If the Wayland environment has not yet been imported, run
+`~/pi-weather/desktop-start.sh` from a **desktop terminal**. An SSH login alone
+cannot create the missing desktop session.
 
-Keep the display off across reboots:
+Stop now, or keep it off across future logins:
 
 ```bash
-touch ~/pi-weather/.display-disabled
 systemctl --user stop pi-weather-kiosk.service
+# Optional: persistently disable desktop launch
+ touch ~/pi-weather/.display-disabled
 ```
 
-Restore startup and start the display:
+Re-enable persistent startup:
 
 ```bash
 rm -f ~/pi-weather/.display-disabled
 systemctl --user start pi-weather-kiosk.service
 ```
 
-Pause updates with `systemctl --user disable --now pi-weather-update.timer`.
-Resume with `systemctl --user enable --now pi-weather-update.timer`.
+## Full-release updates
+
+`pi-weather-update.timer` checks GitHub about every 60 seconds as `cannon`.
+`update.sh` calls `release_update.py`, which fetches `release.json` from `main`.
+The manifest contains SHA-256 checksums for the HTML, Python backend/updater,
+validator, launchers, startup migration helper and all four systemd user units.
+It cannot specify arbitrary paths, rotation, the browser profile or local flags.
+
+On change, every required file is downloaded to staging and checked against the
+same manifest. Python and shell syntax, HTML structure and key kiosk invariants
+are checked before any live file is touched. Network errors, empty responses,
+invalid files or a mixed-commit download leave the installation unchanged.
+Application code on `main` remains trusted; checksums are consistency checks,
+not independent signatures or a security audit.
+
+Only changed files are replaced, using same-directory atomic renames under one
+update lock. A backup and persistent transaction record allow rollback on a
+failed install/health check or recovery at the next run after an interruption.
+The backend restarts and passes `/health` when changed; units trigger a user
+`daemon-reload`. The browser detects HTML changes through `/revision` every 15
+seconds. All of this is unprivileged, with `NoNewPrivileges=yes`; the updater
+never invokes sudo. Supporting files update automatically after the one-time
+v2 migration. The installer itself is only run explicitly.
+
+To publish future changes, edit the repository, run
+`python3 tools/build_release.py`, and commit **release.json with the changed
+files**. CI rejects an out-of-date manifest. GitHub caches or an outage may delay
+an update beyond one minute.
+
+Pause/resume updates:
+
+```bash
+systemctl --user disable --now pi-weather-update.timer
+systemctl --user enable --now pi-weather-update.timer
+```
 
 ## Troubleshooting
 
+Run as `cannon`:
+
 ```bash
-# Health and update schedule
+cat ~/pi-weather/rotation
 systemctl --user status pi-weather-server pi-weather-kiosk pi-weather-update.timer
 systemctl --user list-timers pi-weather-update.timer
-journalctl --user -u pi-weather-kiosk -u pi-weather-server -u pi-weather-update -n 100 --no-pager
-
-# Force update and check installed HTML / local server
+journalctl --user -u pi-weather-server -u pi-weather-kiosk -u pi-weather-update -n 100 --no-pager
+curl -f http://127.0.0.1:8765/health
+curl -f http://127.0.0.1:8765/revision
 systemctl --user start pi-weather-update.service
 python3 ~/pi-weather/validate_weather.py ~/pi-weather/weather.html
-curl -f http://127.0.0.1:8765/revision
-
-# Network checks
-curl -I https://raw.githubusercontent.com/jim1293123-art/cannon-pi-control/main/weather.html
-curl -f 'https://api.open-meteo.com/v1/forecast?latitude=33.4484&longitude=-112.074&current=temperature_2m'
-
-# Run in a desktop terminal
-echo "$XDG_SESSION_TYPE $WAYLAND_DISPLAY"
-wlr-randr
-tail -n 10 ~/.config/labwc/autostart
-
-# Restart display and local server
-systemctl --user restart pi-weather-server.service pi-weather-kiosk.service
+systemctl --user restart pi-weather-server.service
+systemctl --user start pi-weather-kiosk.service
 ```
 
-For a dark screen, check Desktop autologin and disabled screen blanking in
-`sudo raspi-config`, then reboot. For a missing DSI output, check the display
-cable and run `wlr-randr` in the desktop. Port-8765 conflicts appear in the server
-journal; stop the conflicting process before restarting. Do not run Chromium
-with sudo or add `--no-sandbox`.
+`/health` should report version 2 and exit support. If Exit reports the backend
+is unavailable, run the one-time installer above and inspect the server journal.
+Do not use `pkill chromium`, sudo Chromium or `--no-sandbox` as an exit workaround.
 
-Desktop startup follows the
-[Raspberry Pi kiosk guide](https://www.raspberrypi.com/tutorials/how-to-use-a-raspberry-pi-in-kiosk-mode/).
-
-## Development checks
+In a desktop terminal, check startup and the display:
 
 ```bash
+echo "$XDG_SESSION_TYPE $WAYLAND_DISPLAY"
+wlr-randr
+cat ~/.config/labwc/autostart
+pgrep -af 'chromium.*pi-weather/chromium-profile'
+```
+
+Several Chromium subprocesses in the service are normal; a separate direct
+`start-weather.sh` browser is not. Reboot after migration to end any legacy
+process. If the output is missing, inspect the DSI cable and desktop Screens
+settings. This setup retains the existing `rotation` mechanism and expects a
+single Touch Display 2. Port 8765 must be available.
+
+## Validation
+
+```bash
+python3 tools/build_release.py --check
 python3 -m unittest discover -s tests -v
 for script in *.sh; do bash -n "$script"; done
 npm install --no-save --package-lock=false playwright
@@ -161,6 +190,9 @@ npx playwright install chromium
 node tests/browser.cjs
 ```
 
-Automated checks cover validation, updater failure handling, server routes and
-revisions, and browser layout and interactions. Physical rotation, touch
-alignment, desktop startup and reboot behavior need verification on the Pi.
+Tests cover all tabs at 1280×720, settings, touch search, timezone handling,
+offline retries, revision reload, the exit POST and exact service target,
+startup migration, failed/mixed releases, rollback and protected local settings.
+The Linux launcher test simulates a DSI display and verifies 270, the dedicated
+profile and `--password-store=basic`. Actual Pi reboot, physical touch alignment
+and service/window behavior still need verification on the device.

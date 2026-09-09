@@ -1,13 +1,13 @@
 [Unit]
 Description=Pi weather Chromium touchscreen kiosk
-Requires=pi-weather-server.service
+Wants=pi-weather-server.service
 After=pi-weather-server.service
 PartOf=graphical-session.target
 StartLimitIntervalSec=0
 
 [Service]
 ExecStart=%h/pi-weather/kiosk.sh
-Restart=always
+Restart=on-failure
 RestartSec=10
 TimeoutStopSec=15
 KillMode=control-group

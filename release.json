@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "files": {
+    "weather.html": "7390e84e79eba9dd5ddb368aadfef1af7537396a0dd42963a2a3f4b59bf625c0",
+    "server.py": "28d0bdbeea616edbfa7cf1d9da00224209f8510825bc602b856963ecacfe256d",
+    "kiosk.sh": "9b79f96d35467e4f31463c5b38d67ac8f24850dcfa785de13bf39ebc3cdadb37",
+    "desktop-start.sh": "3a5b2f83795a3b4177d4a2411e405b4e3aafc5681ac05b901514a1ef2fe15df1",
+    "update.sh": "76d37735a8d15cd69fb0359aad4ae2477af515183bd9e441a1963f25fe091cc6",
+    "release_update.py": "6b7d264eb175fbc1af7bce98d0e09f4bafdae6dcf6bdb95f54cec245ca271abc",
+    "validate_weather.py": "09a282ff40afd3b918cc4326200de656086bf0a5b8601cccb0ea4600ba6f8c43",
+    "configure_startup.py": "e040ebec075e471adf56830c0448569e1b2a751f77f43f26fb0fcc3c4e897d4a",
+    "systemd/pi-weather-kiosk.service": "978694d609bf6e867626a95bad7dec4d0e46ef65447a2ce57711142156a3fde8",
+    "systemd/pi-weather-server.service": "a9dfbf642861280110637bcd4a0439272dd493ae62379288276852baad2478d6",
+    "systemd/pi-weather-update.service": "2e169e7f87cb4b29db4326152b15f8a61a977217b265cc510ef3564f3c5192d5",
+    "systemd/pi-weather-update.timer": "072e0030ac27bde64a0d99eafa452e43a8b5c414ccd81ca6859d7cd7203156dd"
+  }
+}

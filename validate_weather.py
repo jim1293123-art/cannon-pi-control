@@ -16,7 +16,7 @@ class WeatherParser(HTMLParser):
         attrs = dict(attrs)
         self.ids.add(attrs.get('id'))
         if tag == 'meta' and attrs.get('name') == 'pi-weather-app':
-            self.marker = attrs.get('content') == '1'
+            self.marker = attrs.get('content') == '2'
 
 
 def validate(path):
@@ -29,7 +29,8 @@ def validate(path):
     parser.close()
     if not parser.marker or not {'html', 'head', 'body', 'script'} <= parser.tags:
         raise ValueError('Missing weather app marker or document structure')
-    if not {'app', 'current', 'hourly', 'daily', 'city', 'units'} <= parser.ids:
+    if not {'app', 'homeView', 'radarView', 'forecastView', 'settingsView',
+            'hourly', 'week', 'exitDesktop', 'radarFrame', 'unitSetting'} <= parser.ids:
         raise ValueError('Missing required weather UI elements')
     if not content.rstrip().lower().endswith('</html>') or '</script>' not in content.lower():
         raise ValueError('Incomplete HTML document')

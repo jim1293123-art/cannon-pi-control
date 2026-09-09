@@ -1,5 +1,5 @@
 [Unit]
-Description=Check GitHub for weather UI changes every minute
+Description=Check GitHub for weather app changes every minute
 
 [Timer]
 OnStartupSec=15s
